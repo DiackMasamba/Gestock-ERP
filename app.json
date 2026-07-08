@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Gestock Chat",
+    "slug": "gestock-chat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "gestockchat",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0B5FFF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gestock.chat"
+    },
+    "android": {
+      "package": "com.gestock.chat",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B5FFF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "L'application accède à vos photos pour partager des images dans les conversations."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0B5FFF"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

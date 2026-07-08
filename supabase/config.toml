@@ -1,0 +1,9 @@
+# Configuration Supabase CLI — projet Gestock Chat.
+# Renseignez project_id avec la référence de votre projet (Dashboard → Settings).
+project_id = "gestock-chat"
+
+[db]
+major_version = 15
+
+[functions.send-push]
+verify_jwt = false
