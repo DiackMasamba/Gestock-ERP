@@ -1,0 +1,108 @@
+<header class="topbar">
+  <div>
+    <strong>Paiejour</strong>
+    <span class="sub">Pointage · {{ userName }}</span>
+  </div>
+  <button class="ghost" (click)="logout()">Déconnexion</button>
+</header>
+
+<main class="content">
+  <!-- Sélecteur de chantier + mode -->
+  <section class="controls">
+    <label class="field">
+      Chantier
+      <select
+        [ngModel]="chantierId()"
+        (ngModelChange)="onChantierChange($event)"
+      >
+        @for (c of chantiers(); track c.id) {
+          <option [value]="c.id">{{ c.nom }} ({{ c.code }})</option>
+        }
+      </select>
+    </label>
+
+    <div class="modes">
+      <button [class.active]="mode() === 'camera'" (click)="setMode('camera')">📷 Caméra</button>
+      <button [class.active]="mode() === 'douchette'" (click)="setMode('douchette')">🔫 Douchette</button>
+    </div>
+  </section>
+
+  <!-- Zone de scan -->
+  <section class="scan-zone">
+    @if (mode() === 'camera') {
+      <div id="qr-reader" class="qr-reader"></div>
+      @if (!scanning()) {
+        <p class="muted">Initialisation de la caméra…</p>
+      }
+    } @else {
+      <div class="douchette">
+        <span class="icon">🔫</span>
+        <p>Scannez un badge avec la douchette</p>
+        <input
+          #douchetteInput
+          type="text"
+          [(ngModel)]="codeManuel"
+          (keyup.enter)="onDouchetteEnter()"
+          placeholder="Code / matricule…"
+          autocomplete="off"
+        />
+      </div>
+    }
+  </section>
+
+  <!-- Retour du dernier scan -->
+  @if (feedback(); as f) {
+    <section
+      class="feedback"
+      [class.ok]="f.action !== 'deja_complet'"
+      [class.warn]="f.action === 'deja_complet'"
+    >
+      <div class="avatar">
+        @if (f.pointage.journalier.photo_url) {
+          <img [src]="f.pointage.journalier.photo_url" alt="" />
+        } @else {
+          <span>{{ f.pointage.journalier.prenom.charAt(0) }}{{ f.pointage.journalier.nom.charAt(0) }}</span>
+        }
+      </div>
+      <div class="info">
+        <strong>{{ f.pointage.journalier.nom_complet }}</strong>
+        <span class="matricule">{{ f.pointage.journalier.matricule }}</span>
+        <span class="action">{{ f.message }}</span>
+        <span class="heures">
+          Arrivée : {{ f.pointage.heure_arrivee ? (f.pointage.heure_arrivee | date: 'HH:mm') : '—' }}
+          · Départ : {{ f.pointage.heure_depart ? (f.pointage.heure_depart | date: 'HH:mm') : '—' }}
+        </span>
+      </div>
+    </section>
+  }
+
+  @if (errorMsg()) {
+    <section class="feedback err">
+      <span class="icon">⚠️</span>
+      <span>{{ errorMsg() }}</span>
+    </section>
+  }
+
+  <!-- Feuille de présence du jour -->
+  <section class="liste">
+    <h2>Présences du jour <span class="count">{{ liste().length }}</span></h2>
+    @if (liste().length === 0) {
+      <p class="muted">Aucun pointage pour l'instant.</p>
+    } @else {
+      <ul>
+        @for (p of liste(); track p.id) {
+          <li>
+            <div class="who">
+              <strong>{{ p.journalier.nom_complet }}</strong>
+              <span class="matricule">{{ p.journalier.matricule }}</span>
+            </div>
+            <div class="times">
+              <span class="in">↓ {{ p.heure_arrivee ? (p.heure_arrivee | date: 'HH:mm') : '—' }}</span>
+              <span class="out">↑ {{ p.heure_depart ? (p.heure_depart | date: 'HH:mm') : '—' }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</main>
