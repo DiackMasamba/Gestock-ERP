@@ -2,8 +2,25 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { normalizePhone } from '@/lib/format';
+
+/**
+ * L'URL publique du site telle que vue par la requête en cours. Évite de
+ * dépendre du « Site URL » configuré dans Supabase, qui pointe sur localhost
+ * tant qu'on ne l'a pas changé à la main.
+ */
+async function currentOrigin(): Promise<string | null> {
+  const head = await headers();
+  const origin = head.get('origin');
+  if (origin) return origin;
+
+  const host = head.get('x-forwarded-host') ?? head.get('host');
+  if (!host) return null;
+  const protocol = head.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  return `${protocol}://${host}`;
+}
 
 export type AuthState = { error?: string };
 
@@ -50,13 +67,20 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     }
   }
 
+  const origin = await currentOrigin();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    // handle_new_user() lit ces métadonnées pour créer le profil. Le rôle
-    // 'admin' n'y est jamais accepté : c'est le client qui les envoie.
-    options: { data: { full_name: fullName, phone, role: wantsToSell ? 'seller' : 'buyer' } },
+    options: {
+      // handle_new_user() lit ces métadonnées pour créer le profil. Le rôle
+      // 'admin' n'y est jamais accepté : c'est le client qui les envoie.
+      data: { full_name: fullName, phone, role: wantsToSell ? 'seller' : 'buyer' },
+      // Le lien de confirmation doit revenir sur la route qui échange le jeton.
+      ...(origin
+        ? { emailRedirectTo: `${origin}/auth/confirm?next=${wantsToSell ? '/vendeur' : '/'}` }
+        : {}),
+    },
   });
 
   if (error) {
