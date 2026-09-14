@@ -64,3 +64,18 @@ export async function createShop(_prev: ShopState, formData: FormData): Promise<
   revalidatePath('/');
   return {};
 }
+
+/**
+ * Le vendeur demande la vérification. Il ne peut pas se l'accorder : le trigger
+ * n'autorise que la transition unverified/rejected -> pending, et seulement
+ * par le propriétaire.
+ */
+export async function requestVerification(formData: FormData) {
+  const shopId = String(formData.get('shop_id') ?? '');
+
+  const supabase = await createClient();
+  await supabase.from('shops').update({ verification: 'pending' }).eq('id', shopId);
+
+  revalidatePath('/vendeur');
+  revalidatePath('/admin');
+}

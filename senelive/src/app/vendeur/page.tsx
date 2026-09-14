@@ -7,6 +7,7 @@ import { EmptyState, Price, Rating, StatusBadge, VerifiedBadge } from '@/compone
 import { ORDER_STATUS_LABELS, formatDate } from '@/lib/format';
 import { updateOrderStatus } from '@/lib/actions/order';
 import { setListingStatus } from '@/lib/actions/listing';
+import { requestVerification } from '@/lib/actions/shop';
 
 /** Prochaine étape proposée au vendeur pour chaque statut. */
 const NEXT_STEP: Record<string, { status: string; label: string } | undefined> = {
@@ -28,7 +29,7 @@ export default async function VendeurPage() {
 
   const { data: shop } = await supabase
     .from('shops')
-    .select('id,name,slug,verification,rating_avg,rating_count,cities(name)')
+    .select('id,name,slug,verification,rating_avg,rating_count,whatsapp,cities(name)')
     .eq('owner_id', user.id)
     .maybeSingle();
 
@@ -88,12 +89,26 @@ export default async function VendeurPage() {
             </span>
           ) : null}
         </div>
-        {shop.verification !== 'verified' ? (
+        {shop.verification === 'pending' ? (
           <p className="mt-3 rounded-lg bg-accent-100 px-3 py-2 text-sm text-accent-600">
-            Votre boutique n&apos;est pas encore vérifiée. Vous pouvez vendre, mais le badge
-            « Vérifié » rassure les acheteurs — il est attribué après contrôle de votre numéro.
+            Demande de vérification envoyée. Nous vous appellerons sur votre numéro
+            {shop.whatsapp ? ` (${shop.whatsapp})` : ''} pour confirmer votre identité.
           </p>
-        ) : null}
+        ) : shop.verification === 'verified' ? null : (
+          <div className="mt-3 rounded-lg bg-accent-100 px-3 py-3 text-sm text-accent-600">
+            <p>
+              {shop.verification === 'rejected'
+                ? 'Votre demande de vérification a été refusée. Vérifiez que votre numéro est joignable, puis redemandez.'
+                : 'Votre boutique n’est pas encore vérifiée. Vous pouvez vendre, mais le badge « Vérifié » est ce qui décide un acheteur qui ne vous connaît pas.'}
+            </p>
+            <form action={requestVerification} className="mt-3">
+              <input type="hidden" name="shop_id" value={shop.id} />
+              <button className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                Demander la vérification
+              </button>
+            </form>
+          </div>
+        )}
       </header>
 
       <section>

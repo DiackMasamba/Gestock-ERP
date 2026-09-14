@@ -384,6 +384,7 @@ export type Database = {
           slug: string;
           updated_at: string;
           verification: Database['public']['Enums']['verification_status'];
+          verification_requested_at: string | null;
           verified_at: string | null;
           whatsapp: string | null;
         };
@@ -403,6 +404,7 @@ export type Database = {
           slug: string;
           updated_at?: string;
           verification?: Database['public']['Enums']['verification_status'];
+          verification_requested_at?: string | null;
           verified_at?: string | null;
           whatsapp?: string | null;
         };
@@ -422,6 +424,7 @@ export type Database = {
           slug?: string;
           updated_at?: string;
           verification?: Database['public']['Enums']['verification_status'];
+          verification_requested_at?: string | null;
           verified_at?: string | null;
           whatsapp?: string | null;
         };

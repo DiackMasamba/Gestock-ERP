@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 /** Routes réservées aux utilisateurs connectés. */
-const PROTECTED = ['/commandes', '/vendeur', '/compte'];
+const PROTECTED = ['/commandes', '/vendeur', '/compte', '/admin'];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

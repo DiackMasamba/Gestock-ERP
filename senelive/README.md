@@ -47,6 +47,8 @@ repose sur la RLS, jamais sur le secret de la clé.
   Money, paiement à la livraison)
 - Suivi de commande côté acheteur et côté vendeur, transitions de statut
 - **Avis uniquement après livraison**, note de boutique recalculée en base
+- **Circuit de vérification** : le vendeur demande, un administrateur accorde
+  (écran `/admin` : file d'attente, coordonnées à appeler, suspension)
 
 ## Modèle de sécurité
 
@@ -62,8 +64,16 @@ Tout est appliqué côté PostgreSQL, jamais côté client :
   pièce.
 - **`orders.subtotal` est dérivé** de `order_items` à chaque écriture : un
   client ne peut pas imposer un montant.
-- **Un vendeur ne peut ni se vérifier lui-même ni se fabriquer une note** — un
-  trigger restaure ces colonnes, que la RLS ne sait pas filtrer.
+- **La RLS ne filtre que les lignes, jamais les colonnes.** C'est le piège
+  principal du modèle : `profiles_update_own` autorise un utilisateur à modifier
+  sa propre ligne, ce qui incluait `role` — n'importe qui pouvait se promouvoir
+  `admin` en une requête (corrigé en `008`). Chaque table dont une colonne est
+  privilégiée a donc un trigger `BEFORE UPDATE` qui la restaure :
+  `role` et `phone_verified_at` sur `profiles`, `verification`, `verified_at`,
+  `rating_avg`, `rating_count` et `owner_id` sur `shops`.
+- **Un vendeur ne peut que *demander* la vérification** (`unverified` ou
+  `rejected` → `pending`) ; seul un administrateur l'accorde, et `verified_at`
+  suit automatiquement le statut.
 - **Transitions de statut contrôlées** : l'acheteur ne peut qu'annuler une
   commande encore en attente, le vendeur ne peut pas sauter d'étape ni modifier
   l'adresse de livraison.
@@ -88,12 +98,27 @@ neutralisées.
 | `005_shows.sql` | Socle des lives (phase 2) |
 | `006_harden_functions.sql` | Fonctions internes déplacées hors de l'API |
 | `007_fix_order_totals.sql` | Sous-total dérivé au lieu d'être gardé |
+| `008_admin_verification.sql` | Faille d'élévation de privilèges, file de vérification |
 
 Régénérer les types après toute migration :
 
 ```bash
 npx supabase gen types typescript --project-id rmnsevkzdjapjmjnagye > src/lib/database.types.ts
 ```
+
+## Créer le premier administrateur
+
+Il ne peut pas se créer depuis l'application — c'est justement ce que le
+trigger empêche. Inscrivez-vous normalement, puis exécutez une fois, dans le
+SQL Editor de Supabase :
+
+```sql
+update public.profiles set role = 'admin'
+where id = (select id from auth.users where email = 'votre@email.com');
+```
+
+Le lien **Admin** apparaît ensuite dans l'en-tête. Un administrateur peut
+promouvoir les suivants.
 
 ## Ce qui reste à brancher
 

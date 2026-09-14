@@ -9,9 +9,12 @@ export async function Header() {
   } = await supabase.auth.getUser();
 
   // Une seule boutique par compte : sa présence décide du lien « Vendre ».
-  const { data: shop } = user
-    ? await supabase.from('shops').select('slug').eq('owner_id', user.id).maybeSingle()
-    : { data: null };
+  const [{ data: shop }, { data: profile }] = user
+    ? await Promise.all([
+        supabase.from('shops').select('slug').eq('owner_id', user.id).maybeSingle(),
+        supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
+      ])
+    : [{ data: null }, { data: null }];
 
   return (
     <header className="border-b border-line bg-surface">
@@ -32,6 +35,11 @@ export async function Header() {
               <Link href="/vendeur" className="rounded-lg px-3 py-2 text-ink-700 hover:bg-canvas">
                 {shop ? 'Ma boutique' : 'Vendre'}
               </Link>
+              {profile?.role === 'admin' ? (
+                <Link href="/admin" className="rounded-lg px-3 py-2 font-medium text-brand-700 hover:bg-canvas">
+                  Admin
+                </Link>
+              ) : null}
               <form action={signOut}>
                 <button className="rounded-lg px-3 py-2 text-ink-500 hover:bg-canvas">
                   Déconnexion
